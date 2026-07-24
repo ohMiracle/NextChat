@@ -153,13 +153,15 @@ export class GeminiProApi implements LLMApi {
     const requestPayload = {
       contents: messages,
       generationConfig: {
-        // stopSequences: [
-        //   "Title"
-        // ],
-        temperature: modelConfig.temperature,
+        // Gemini 3.6 deprecates temperature/topP/topK. Keep these controls
+        // for older Gemini models while omitting them from 3.6 requests.
         maxOutputTokens: modelConfig.max_tokens,
-        topP: modelConfig.top_p,
-        // "topK": modelConfig.top_k,
+        ...(modelConfig.model === "gemini-3.6-flash"
+          ? {}
+          : {
+              temperature: modelConfig.temperature,
+              topP: modelConfig.top_p,
+            }),
       },
       safetySettings: [
         {
@@ -197,7 +199,6 @@ export class GeminiProApi implements LLMApi {
         signal: controller.signal,
         headers: getHeaders(),
       };
-
       const isThinking = options.config.model.includes("-thinking");
       // make a fetch request
       const requestTimeoutId = setTimeout(
