@@ -1,0 +1,48 @@
+name: Update Gemini Flash to 3.6
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/update-gemini-36.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update-model:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Replace Gemini model ID
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("app/constant.ts")
+          content = path.read_text(encoding="utf-8")
+          old = '"gemini-3.5-flash"'
+          new = '"gemini-3.6-flash"'
+
+          count = content.count(old)
+          if count != 1:
+              raise SystemExit(
+                  f"Expected exactly one occurrence of {old}, found {count}."
+              )
+
+          path.write_text(content.replace(old, new, 1), encoding="utf-8")
+          PY
+
+      - name: Commit model update and remove workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/update-gemini-36.yml
+          git add app/constant.ts .github/workflows/update-gemini-36.yml
+          git commit -m "feat: update Gemini Flash to 3.6"
+          git push
